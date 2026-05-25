@@ -1,23 +1,106 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCustomizerStore } from '../store/useCustomizerStore';
-import { ShieldCheck, User, Mail, Lock, ArrowRight, Loader } from 'lucide-react';
+import {
+  ShieldCheck,
+  User,
+  Mail,
+  Lock,
+  ArrowRight,
+  Loader
+} from 'lucide-react';
 
+/* ================= INPUT FIELD ================= */
+function InputField({
+  label,
+  type,
+  value,
+  onChange,
+  placeholder,
+  Icon,
+  error
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-[10px] uppercase font-bold tracking-wider text-brand-text/50">
+        {label}
+      </label>
+
+      <div className="relative w-full">
+        <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+          <Icon className="w-4 h-4 text-brand-text/30" />
+        </div>
+
+        <input
+          type={type}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          className={`
+            w-full h-11 pl-10 pr-3 text-xs text-white
+            placeholder:text-brand-text/40
+            bg-brand-dark/40 border rounded-lg outline-none
+            focus:ring-1 transition
+            ${
+              error
+                ? 'border-red-500/60 focus:ring-red-500/30'
+                : 'border-brand-border/50 focus:border-brand-primary/60 focus:ring-brand-primary/30'
+            }
+          `}
+        />
+      </div>
+
+      {error && (
+        <span className="text-[10px] text-red-400 font-medium">
+          {error}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/* ================= MAIN AUTH ================= */
 export default function Auth() {
   const store = useCustomizerStore();
+  const navigate = useNavigate();
+
   const [isLogin, setIsLogin] = useState(true);
+
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  const [errors, setErrors] = useState({});
+
+  /* ================= VALIDATION ================= */
+  const validate = () => {
+    const newErrors = {};
+
+    if (!isLogin) {
+      if (!username || username.length < 3) {
+        newErrors.username = 'Username must be at least 3 characters';
+      } else if (!/^[A-Za-z]+$/.test(username)) {
+        newErrors.username = 'Only letters A-Z allowed (no numbers or symbols)';
+      }
+    }
+
+    if (!email) {
+      newErrors.email = 'Email is required';
+    }
+
+    if (!password || password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  /* ================= SUBMIT ================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    console.log("Form Data:", {
-      username,
-      email,
-      password,
-      mode: isLogin ? "login" : "register",
-    });
+    if (!validate()) return;
 
     try {
       if (isLogin) {
@@ -26,106 +109,69 @@ export default function Auth() {
         await store.register(username, email, password);
       }
     } catch (err) {
-      console.error("Auth error:", err);
+      console.error(err);
     }
-  };
-
-  const toggleMode = () => {
-    setIsLogin((prev) => !prev);
-    store.setView(isLogin ? 'register' : 'login');
   };
 
   return (
     <div className="flex-grow flex items-center justify-center p-6 bg-[#090D16]">
-      <div className="glass-panel w-full max-w-md p-8 rounded-2xl space-y-6 shadow-2xl relative">
+      <div className="glass-panel w-full max-w-md p-8 rounded-2xl space-y-6 shadow-2xl">
 
-        {/* Glow Header */}
-        <div className="absolute top-0 left-1/4 right-1/4 h-0.5 bg-gradient-to-r from-transparent via-brand-primary to-transparent" />
-
+        {/* HEADER */}
         <div className="text-center space-y-2">
-          <div className="inline-flex p-3 bg-brand-primary/10 rounded-full border border-brand-primary/20 text-brand-primary mb-2">
+          <div className="inline-flex p-3 bg-brand-primary/10 rounded-full border border-brand-primary/20 text-brand-primary">
             <ShieldCheck className="w-6 h-6" />
           </div>
 
           <h2 className="text-xl font-bold uppercase tracking-wider text-white">
             {isLogin ? 'Welcome Back Coach' : 'Create Customizer Profile'}
           </h2>
-
-          <p className="text-xs text-brand-text/50">
-            {isLogin
-              ? 'Sign in to access your saved cloud blueprints'
-              : 'Register to upload logos and synchronize order histories'}
-          </p>
         </div>
 
-        {/* Error */}
-        {store.authError && (
-          <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-3 rounded-lg text-xs font-semibold text-center uppercase tracking-wide">
-            {store.authError}
-          </div>
-        )}
-
-        {/* Form */}
+        {/* FORM */}
         <form onSubmit={handleSubmit} className="space-y-4">
 
           {!isLogin && (
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] uppercase font-bold tracking-wider text-brand-text/50">
-                Username
-              </label>
-              <div className="relative">
-                <User className="absolute left-3.5 top-3 w-4 h-4 text-brand-text/30" />
-                <input
-                  type="text"
-                  required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="e.g. coachsmith"
-                  className="glass-input pl-10 text-xs w-full"
-                />
-              </div>
-            </div>
+            <InputField
+              label="Username"
+              type="text"
+              value={username}
+              error={errors.username}
+              onChange={(e) => {
+                // ONLY letters allowed live
+                const cleaned = e.target.value.replace(/[^A-Za-z]/g, '');
+                setUsername(cleaned);
+              }}
+              placeholder="e.g. coachsmith"
+              Icon={User}
+            />
           )}
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] uppercase font-bold tracking-wider text-brand-text/50">
-              Email Address
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3.5 top-3 w-4 h-4 text-brand-text/30" />
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="coach@team.com"
-                className="glass-input pl-10 text-xs w-full"
-              />
-            </div>
-          </div>
+          <InputField
+            label="Email"
+            type="email"
+            value={email}
+            error={errors.email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="coach@team.com"
+            Icon={Mail}
+          />
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] uppercase font-bold tracking-wider text-brand-text/50">
-              Password
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3.5 top-3 w-4 h-4 text-brand-text/30" />
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="glass-input pl-10 text-xs w-full"
-              />
-            </div>
-          </div>
+          <InputField
+            label="Password"
+            type="password"
+            value={password}
+            error={errors.password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            Icon={Lock}
+          />
 
-          {/* Submit Button */}
+          {/* BUTTON */}
           <button
             type="submit"
             disabled={store.authLoading}
-            className="w-full glass-btn-primary py-3 text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-2 mt-6 shadow"
+            className="w-full glass-btn-primary py-3 text-xs font-bold uppercase flex items-center justify-center gap-2"
           >
             {store.authLoading && (
               <Loader className="w-3.5 h-3.5 animate-spin" />
@@ -135,7 +181,7 @@ export default function Auth() {
               ? 'SUBMITTING...'
               : isLogin
               ? 'SIGN IN'
-              : 'REGISTER ACCOUNT'}
+              : 'REGISTER'}
 
             {!store.authLoading && (
               <ArrowRight className="w-4 h-4" />
@@ -143,25 +189,25 @@ export default function Auth() {
           </button>
         </form>
 
-        {/* Toggle */}
+        {/* TOGGLE */}
         <div className="text-center pt-4 border-t border-brand-border/40 space-y-3">
-
           <button
-            onClick={toggleMode}
-            className="text-xs text-brand-primary hover:underline font-medium block mx-auto uppercase tracking-wider"
+            type="button"
+            onClick={() => setIsLogin((p) => !p)}
+            className="text-xs text-brand-primary uppercase"
           >
             {isLogin
-              ? "Need a profile? Register here"
-              : "Have an account? Log in here"}
+              ? 'Need account? Register'
+              : 'Already have account? Login'}
           </button>
-
+<br />
           <button
-            onClick={() => store.setView('customizer')}
-            className="text-[10px] text-brand-text/40 hover:text-white uppercase tracking-widest font-bold block mx-auto hover:underline"
+            type="button"
+            onClick={() => navigate('/customizer')}
+            className="text-[10px] text-brand-text/40 uppercase"
           >
-            Continue as Guest (No Cloud Backup)
+            Continue as Guest
           </button>
-
         </div>
       </div>
     </div>

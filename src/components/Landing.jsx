@@ -1,9 +1,11 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCustomizerStore } from '../store/useCustomizerStore';
 import { Sparkles, ArrowRight, ShieldCheck, Zap, Palette, FolderGit } from 'lucide-react';
 
 export default function Landing() {
   const store = useCustomizerStore();
+  const navigate = useNavigate();
 
   return (
     <div className="flex-grow flex flex-col">
@@ -26,7 +28,8 @@ export default function Landing() {
           <button
             onClick={() => {
               store.setProduct('jersey');
-              store.setView('customizer');
+              navigate('/customizer');
+              
             }}
             className="glass-btn-primary px-8 py-3.5 text-xs font-bold tracking-widest uppercase flex items-center gap-2"
           >
@@ -35,7 +38,7 @@ export default function Landing() {
           </button>
           
           <button
-            onClick={() => store.setView('dashboard')}
+            onClick={() => navigate('/dashboard')}
             className="glass-btn-secondary px-8 py-3.5 text-xs font-bold tracking-widest uppercase flex items-center gap-2"
           >
             <FolderGit className="w-4 h-4" />
@@ -63,7 +66,7 @@ export default function Landing() {
               <button
                 onClick={() => {
                   store.setProduct('jersey');
-                  store.setView('customizer');
+                  navigate('/customizer');
                 }}
                 className="text-xs font-bold text-brand-primary group-hover:text-white flex items-center gap-1 transition-colors uppercase tracking-wider"
               >
@@ -87,7 +90,7 @@ export default function Landing() {
               <button
                 onClick={() => {
                   store.setProduct('cap');
-                  store.setView('customizer');
+                 navigate('/customizer');
                 }}
                 className="text-xs font-bold text-brand-primary group-hover:text-white flex items-center gap-1 transition-colors uppercase tracking-wider"
               >
